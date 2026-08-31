@@ -54,11 +54,15 @@ function Get-CurrentBranch {
 }
 
 function Get-LatestTag {
-    $raw = git describe --tags --abbrev=0 2>&1
+    # git describe 在没有任何 tag 时会向 stderr 打印 fatal 并失败，
+    # 改用 for-each-ref 静默列出所有 tag，没有时返回空，不报错。
+    $candidates = git for-each-ref --format='%(refname:short)' refs/tags 2>$null
     if ($LASTEXITCODE -ne 0) { return $null }
-    $clean = $raw | Where-Object { $_ -match '^v?\d+(\.\d+){1,2}$' } | Select-Object -First 1
-    if (-not $clean) { return $null }
-    return $clean.Trim()
+    $semver = $candidates | Where-Object { $_ -match '^v\d+\.\d+\.\d+$' }
+    if (-not $semver) { return $null }
+    return $semver |
+        Sort-Object { [version]($_ -replace '^v','') } -Descending |
+        Select-Object -First 1
 }
 
 # --- sanity checks ----------------------------------------------------------
