@@ -120,7 +120,7 @@ wails dev
 .\scripts\release.ps1 -SkipPush
 ```
 
-推送 tag 后，`.github/workflows/release.yml` 会在 Windows (amd64) 和 macOS (arm64) 上构建并自动创建 GitHub Release，工件命名格式：
+推送 tag 后，`.github/workflows/release.yml` 会在 Windows (amd64) 上构建并自动创建 GitHub Release，工件命名格式：
 
 ```
 mouseassistant-vX.Y.Z-<goos>-<goarch>.<ext>
@@ -130,7 +130,7 @@ mouseassistant-vX.Y.Z-<goos>-<goarch>.<ext>
 
 - `recorder_windows.go` / `runhotkey_windows.go` / `wininput_windows.go`：使用 Win32 API 的真实实现
 - 对应的 `*_other.go`：Linux / macOS 上的 stub，保证可编译但功能不可用
-- 完整功能仅在 Windows 平台可用；macOS 仅发布构建产物供下载
+- 完整功能仅在 Windows 平台可用
 
 ## 许可证
 

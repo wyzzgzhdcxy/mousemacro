@@ -21,9 +21,6 @@ jobs:
           - os: windows-latest
             platform: { goos: windows, goarch: amd64 }
             archive_ext: zip
-          - os: macos-latest
-            platform: { goos: darwin, goarch: arm64 }
-            archive_ext: tar.gz
 
     steps:
       - name: Checkout
@@ -49,7 +46,6 @@ jobs:
           npm ci
 
       - name: Build (Windows)
-        if: matrix.platform.goos == 'windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\wtools" | Out-Null
@@ -58,32 +54,15 @@ jobs:
           GOOS: windows
           GOARCH: amd64
 
-      - name: Build (macOS)
-        if: matrix.platform.goos == 'darwin'
-        shell: bash
-        run: |
-          mkdir -p "$HOME/Library/Caches/wtools"
-          wails build -platform darwin/${{ matrix.platform.goarch }} -trimpath -clean
-        env:
-          GOOS: darwin
-          GOARCH: ${{ matrix.platform.goarch }}
-
       - name: Package artifacts
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist
           NAME="mouseassistant-${{ github.ref_name }}-${{ matrix.platform.goos }}-${{ matrix.platform.goarch }}"
-          case "${{ matrix.platform.goos }}" in
-            windows)
-              cd build/bin
-              7z a "../../dist/${NAME}.zip" ./* || zip -r "../../dist/${NAME}.zip" ./*
-              cd ../..
-              ;;
-            darwin)
-              tar -czf "dist/${NAME}.tar.gz" -C build/bin mouseassistant.app
-              ;;
-          esac
+          cd build/bin
+          7z a "../../dist/${NAME}.zip" ./* || zip -r "../../dist/${NAME}.zip" ./*
+          cd ../..
           ls -la dist
 
       - name: Upload artifact
