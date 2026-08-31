@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "mouseassistant",
+  "outputfilename": "mouseassistant",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "wangchaojun",
+    "email": "751849652@qq.com"
+  },
+  "info": {
+    "productName": "鼠标助手",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2026 wangchaojun",
+    "comments": "鼠标宏录制与自动化执行工具"
+  }
+}

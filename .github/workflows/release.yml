@@ -1,0 +1,129 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build-${{ matrix.platform.goos }}-${{ matrix.platform.goarch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: { goos: windows, goarch: amd64 }
+            archive_ext: zip
+          - os: macos-latest
+            platform: { goos: darwin, goarch: arm64 }
+            archive_ext: tar.gz
+          - os: ubuntu-latest
+            platform: { goos: linux, goarch: amd64 }
+            archive_ext: tar.gz
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0
+
+      - name: Install frontend dependencies
+        shell: bash
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build (Windows)
+        if: matrix.platform.goos == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\wtools" | Out-Null
+          wails build -platform windows/amd64 -trimpath -clean
+        env:
+          GOOS: windows
+          GOARCH: amd64
+
+      - name: Build (macOS)
+        if: matrix.platform.goos == 'darwin'
+        shell: bash
+        run: |
+          mkdir -p "$HOME/Library/Caches/wtools"
+          wails build -platform darwin/${{ matrix.platform.goarch }} -trimpath -clean
+        env:
+          GOOS: darwin
+          GOARCH: ${{ matrix.platform.goarch }}
+
+      - name: Build (Linux)
+        if: matrix.platform.goos == 'linux'
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.cache/wtools"
+          wails build -platform linux/${{ matrix.platform.goarch }} -trimpath -clean
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.platform.goarch }}
+
+      - name: Package artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          NAME="mouseassistant-${{ github.ref_name }}-${{ matrix.platform.goos }}-${{ matrix.platform.goarch }}"
+          case "${{ matrix.platform.goos }}" in
+            windows)
+              cd build/bin
+              7z a "../../dist/${NAME}.zip" ./* || zip -r "../../dist/${NAME}.zip" ./*
+              cd ../..
+              ;;
+            darwin)
+              tar -czf "dist/${NAME}.tar.gz" -C build/bin mouseassistant.app
+              ;;
+            *)
+              tar -czf "dist/${NAME}.tar.gz" -C build/bin mouseassistant
+              ;;
+          esac
+          ls -la dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mouseassistant-${{ matrix.platform.goos }}-${{ matrix.platform.goarch }}
+          path: dist/*.${{ matrix.archive_ext }}
+
+  release:
+    name: release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
