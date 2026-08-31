@@ -23,9 +23,6 @@ jobs:
           - os: macos-latest
             platform: { goos: darwin, goarch: arm64 }
             archive_ext: tar.gz
-          - os: ubuntu-latest
-            platform: { goos: linux, goarch: amd64 }
-            archive_ext: tar.gz
 
     steps:
       - name: Checkout
@@ -70,16 +67,6 @@ jobs:
           GOOS: darwin
           GOARCH: ${{ matrix.platform.goarch }}
 
-      - name: Build (Linux)
-        if: matrix.platform.goos == 'linux'
-        shell: bash
-        run: |
-          mkdir -p "$HOME/.cache/wtools"
-          wails build -platform linux/${{ matrix.platform.goarch }} -trimpath -clean
-        env:
-          GOOS: linux
-          GOARCH: ${{ matrix.platform.goarch }}
-
       - name: Package artifacts
         shell: bash
         run: |
@@ -94,9 +81,6 @@ jobs:
               ;;
             darwin)
               tar -czf "dist/${NAME}.tar.gz" -C build/bin mouseassistant.app
-              ;;
-            *)
-              tar -czf "dist/${NAME}.tar.gz" -C build/bin mouseassistant
               ;;
           esac
           ls -la dist
