@@ -15,14 +15,14 @@
 
 | 层级    | 技术                                |
 | ------- | ----------------------------------- |
-| 前端    | Vue 3 + Vite                        |
-| 后端    | Go 1.25 + Wails v2.15               |
+| 前端    | Vue 3.5 + Vite 8                    |
+| 后端    | Go 1.27 + Wails v2.15               |
 | 系统集成 | Win32 API (Windows) / stub (其它) |
 
 ## 环境要求
 
-- Go >= 1.25
-- Node.js >= 18 (推荐 24，CI 使用)
+- Go >= 1.27
+- Node.js >= 20.19 (推荐 24，与本机/CI 一致)
 - Wails CLI: `go install github.com/wailsapp/wails/v2/cmd/wails@v2.15.0`
 - Windows 端构建需 WebView2 Runtime（Win11 自带）
 
