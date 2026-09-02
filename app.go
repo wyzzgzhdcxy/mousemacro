@@ -225,6 +225,12 @@ func (a *App) MoveWindowByTitle(titleKeyword string, x int, y int) ([]string, er
 	return winMoveWindowsByTitle(titleKeyword, x, y)
 }
 
+// ListWindowTitles 枚举当前桌面上所有可见的顶层窗口,返回它们的标题列表(去重)。
+// 用于前端"移动窗口"步骤的下拉选择器。
+func (a *App) ListWindowTitles() ([]string, error) {
+	return winListWindowTitles()
+}
+
 // RunSteps 异步执行一组步骤循环 N 次。
 // 启动后立即返回,通过 run:* 事件向前端推送进度。
 //

@@ -609,3 +609,21 @@ func winMoveWindowsByTitle(keyword string, x, y int) ([]string, error) {
 	}
 	return moved, nil
 }
+
+// winListWindowTitles 枚举所有可见顶层窗口的标题,按枚举顺序去重后返回。
+// 供前端"移动窗口"步骤的下拉选择器使用。
+func winListWindowTitles() ([]string, error) {
+	seen := make(map[string]struct{})
+	var titles []string
+	err := winEnumWindows(func(hwnd uintptr, title string) bool {
+		if _, ok := seen[title]; !ok {
+			seen[title] = struct{}{}
+			titles = append(titles, title)
+		}
+		return true
+	})
+	if err != nil {
+		return nil, err
+	}
+	return titles, nil
+}

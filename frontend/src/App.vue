@@ -10,6 +10,7 @@ import {
   SaveSteps,
   LoadSteps,
   OpenLogFolder,
+  ListWindowTitles,
 } from '../wailsjs/go/main/App.js'
 import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime.js'
 
@@ -57,6 +58,26 @@ const showMousePos = ref(true)
 const mousePos = ref({ x: 0, y: 0 })
 let mousePosTimer = null
 
+// 当前桌面所有可见顶层窗口的标题(去重),供"移动窗口"步骤的下拉选择器使用。
+const windowTitles = ref([])
+async function refreshWindowTitles() {
+  try {
+    const list = await ListWindowTitles()
+    windowTitles.value = Array.isArray(list) ? list : []
+  } catch (e) {
+    windowTitles.value = []
+    pushLog(`✗ 枚举窗口失败: ${e}`)
+  }
+}
+// 把"当前标题值"也合进候选列表(编辑已存在步骤时,该窗口可能已不在桌面上)。
+function windowTitleOptions(extra) {
+  const set = new Set(windowTitles.value)
+  if (extra && !set.has(extra)) {
+    return [...windowTitles.value, extra]
+  }
+  return windowTitles.value
+}
+
 function startMousePosWatch() {
   stopMousePosWatch()
   const tick = async () => {
@@ -85,11 +106,18 @@ const currentTypeMeta = computed(
   () => STEP_TYPES.find(t => t.value === draft.value.type) || STEP_TYPES[0]
 )
 
-// 添加面板里切到「移动窗口」类型时,坐标自动预填默认值 (100, 100)
+// 添加面板里切到「移动窗口」类型时,坐标自动预填默认值 (100, 100) 并刷新窗口列表
 watch(() => draft.value.type, (t) => {
   if (t === 'movewindow') {
     draft.value.x = 100
     draft.value.y = 100
+    refreshWindowTitles()
+  }
+})
+// 编辑面板切到「移动窗口」时也刷新窗口列表
+watch(() => editDraft.value.type, (t) => {
+  if (t === 'movewindow') {
+    refreshWindowTitles()
   }
 })
 
@@ -717,7 +745,14 @@ onBeforeUnmount(() => {
                 <template v-if="currentTypeMeta.needTitle">
                   <div class="add-row">
                     <label>窗口标题</label>
-                    <input type="text" v-model="draft.title" placeholder='如 抖音(标题包含即匹配)' />
+                    <div class="title-row">
+                      <select v-model="draft.title" class="grow">
+                        <option value="" disabled>-- 选择窗口 --</option>
+                        <option v-for="t in windowTitles" :key="t" :value="t">{{ t }}</option>
+                      </select>
+                      <button type="button" class="ghost" @click="refreshWindowTitles" :disabled="isRunning" title="刷新窗口列表">↻</button>
+                    </div>
+                    <small class="hint">共 {{ windowTitles.length }} 个可见窗口,下拉选择即作为匹配关键字</small>
                   </div>
                 </template>
                 <div class="add-row">
@@ -757,7 +792,10 @@ onBeforeUnmount(() => {
                     <input type="text" v-model="editDraft.text" placeholder="文本" class="grow" />
                   </template>
                   <template v-if="editTypeMeta?.needTitle">
-                    <input type="text" v-model="editDraft.title" placeholder="窗口标题" class="sm" />
+                    <select v-model="editDraft.title" class="sm" @focus="refreshWindowTitles">
+                      <option v-for="t in windowTitleOptions(editDraft.title)" :key="t" :value="t">{{ t }}</option>
+                    </select>
+                    <button class="ghost xs" @click="refreshWindowTitles" type="button" title="刷新窗口列表">↻</button>
                   </template>
                   <input type="number" v-model.number="editDraft.delayMs" placeholder="延迟 ms" min="0" step="50" class="xs" title="执行前延迟" />
                   <div class="step-actions">
@@ -825,7 +863,14 @@ onBeforeUnmount(() => {
                   <template v-if="currentTypeMeta.needTitle">
                     <div class="add-row">
                       <label>窗口标题</label>
-                      <input type="text" v-model="draft.title" placeholder='如 抖音(标题包含即匹配)' />
+                      <div class="title-row">
+                        <select v-model="draft.title" class="grow">
+                          <option value="" disabled>-- 选择窗口 --</option>
+                          <option v-for="t in windowTitles" :key="t" :value="t">{{ t }}</option>
+                        </select>
+                        <button type="button" class="ghost" @click="refreshWindowTitles" :disabled="isRunning" title="刷新窗口列表">↻</button>
+                      </div>
+                      <small class="hint">共 {{ windowTitles.length }} 个可见窗口,下拉选择即作为匹配关键字</small>
                     </div>
                   </template>
                   <div class="add-row">
@@ -879,6 +924,19 @@ onBeforeUnmount(() => {
                   <div class="add-row">
                     <label>文本</label>
                     <input type="text" v-model="draft.text" placeholder="要逐字符输入的文本" />
+                  </div>
+                </template>
+                <template v-if="currentTypeMeta.needTitle">
+                  <div class="add-row">
+                    <label>窗口标题</label>
+                    <div class="title-row">
+                      <select v-model="draft.title" class="grow">
+                        <option value="" disabled>-- 选择窗口 --</option>
+                        <option v-for="t in windowTitles" :key="t" :value="t">{{ t }}</option>
+                      </select>
+                      <button type="button" class="ghost" @click="refreshWindowTitles" :disabled="isRunning" title="刷新窗口列表">↻</button>
+                    </div>
+                    <small class="hint">共 {{ windowTitles.length }} 个可见窗口,下拉选择即作为匹配关键字</small>
                   </div>
                 </template>
                 <div class="add-row">

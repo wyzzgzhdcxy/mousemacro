@@ -16,3 +16,7 @@ func runStepOnWindows(step Step, abort *atomicBool) error {
 func winMoveWindowsByTitle(keyword string, x, y int) ([]string, error) {
 	return nil, fmt.Errorf("窗口操作仅在 Windows 上可用,当前为非 Windows 平台")
 }
+
+func winListWindowTitles() ([]string, error) {
+	return nil, fmt.Errorf("窗口枚举仅在 Windows 上可用,当前为非 Windows 平台")
+}

@@ -751,6 +751,22 @@ button:active:not(:disabled) {
   gap: 6px;
   justify-content: flex-end;
 }
+.add-row .title-row {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.add-row .title-row select {
+  flex: 1;
+  min-width: 0;
+}
+.add-row .hint {
+  flex: 1;
+  font-size: 11px;
+  color: #6b7388;
+  margin-top: 2px;
+}
 
 /* ===== 日志 ===== */
 .logbox {
