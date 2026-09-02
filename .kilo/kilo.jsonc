@@ -3,7 +3,7 @@
   "mcp": {
     "shell": {
       "type": "local",
-      "command": ["E:\\application\\shell-mcp\\shell-mcp-windows-amd64.exe"],
+      "command": ["E:\\application\\shell-mcp\\shell-mcp-windows-amd64.exe", "-config", "E:\\application\\shell-mcp\\config.json"],
       "enabled": true
     }
   }
