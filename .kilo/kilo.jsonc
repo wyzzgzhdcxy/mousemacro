@@ -1,3 +1,10 @@
 {
-  "$schema": "https://app.kilo.ai/config.json"
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "shell": {
+      "type": "local",
+      "command": ["E:\\application\\shell-mcp\\shell-mcp-windows-amd64.exe"],
+      "enabled": true
+    }
+  }
 }
