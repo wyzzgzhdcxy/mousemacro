@@ -14,7 +14,7 @@
         .\scripts\build-local.ps1 -NoDeploy        # 只构建不部署
         .\scripts\build-local.ps1 -DryRun          # 只预览不执行
 
-    默认会部署到 E:\application\我的工具箱\（目标进程在跑时先杀掉再复制）。
+    默认会部署到 D:\app_mgr\my\（目标进程在跑时先杀掉再复制）。
 
     产出:
         build/bin/mouseassistant.exe   <- 单文件 GUI 程序（隐藏控制台）
@@ -23,6 +23,10 @@
         - 通过 `wails build` 一次性产出前端+后端的单可执行文件；
         - 构建完成后默认把 mouseassistant.exe 部署到 -DeployDir 指定的目录，
           部署前会先停止同名正在运行的进程（避免文件占用）。
+    部署目录（app_output_dir）:
+        取值优先级：-DeployDir 参数 > 环境变量 app_output_dir > 内置兜底 D:\app_mgr\my
+        查看当前值：$env:app_output_dir
+        修改：[Environment]::SetEnvironmentVariable('app_output_dir', 'D:\app_mgr\my', 'User')
 #>
 
 [CmdletBinding()]
@@ -31,12 +35,32 @@ param(
     [switch]$SkipFrontend,
     [string]$Platform = "windows/amd64",
     [string]$OutputDir = "build\bin",
-    [string]$DeployDir = "E:\application\我的工具箱",
+    [string]$DeployDir,       # 部署目录；留空则取环境变量 app_output_dir，兜底 D:\app_mgr\my
     [switch]$NoDeploy,
     [switch]$DryRun
 )
 
 $ErrorActionPreference = 'Stop'
+
+# --- resolve deploy dir ------------------------------------------------------
+# 部署目录取值优先级：-DeployDir 参数 > 环境变量 app_output_dir > 内置兜底目录
+$FallbackDeployDir = "D:\app_mgr\my"
+$envDeployDir = [Environment]::GetEnvironmentVariable('app_output_dir')
+$envDeployDir = if ($null -ne $envDeployDir) { $envDeployDir.Trim() } else { '' }
+
+if ($DeployDir) {
+    $DeployDirSource = '-DeployDir 参数'
+} elseif ($envDeployDir) {
+    $DeployDir = $envDeployDir
+    $DeployDirSource = '环境变量 app_output_dir'
+} else {
+    $DeployDir = $FallbackDeployDir
+    $DeployDirSource = '脚本内置默认值'
+}
+
+# 去掉结尾多余的分隔符，避免拼出 "D:\app_mgr\my\\app.exe"；盘符根目录保留
+$DeployDir = $DeployDir.Trim().TrimEnd('\', '/')
+if ($DeployDir -match '^[A-Za-z]:$') { $DeployDir += '\' }
 
 function Write-Step($t) { Write-Host "`n==> $t" -ForegroundColor Cyan }
 function Write-Ok($t)   { Write-Host $t -ForegroundColor Green }
@@ -108,10 +132,8 @@ if ($DryRun) {
 # --- deploy ------------------------------------------------------------------
 if ($NoDeploy) {
     Write-Warn "已跳过部署 (-NoDeploy)"
-} elseif (-not $DeployDir) {
-    Write-Warn "未指定 -DeployDir，跳过部署（需要部署时加 -DeployDir <目录>）"
 } else {
-    Write-Step "部署到: $DeployDir"
+    Write-Step "部署到: $DeployDir  (来源: $DeployDirSource)"
     if (-not (Test-Path -LiteralPath $DeployDir)) {
         New-Item -ItemType Directory -Path $DeployDir -Force | Out-Null
     }
